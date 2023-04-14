@@ -9,23 +9,24 @@ import {WiThunderstorm} from "react-icons/wi";
 import {WiDayFog} from "react-icons/wi";
 import "../App.css";
 import {WeatherContext} from "../Context/WeatherContext";
+import dayjs from "dayjs";
 
 const WeatherForecast = () => {
     const {city: contextCity} = useContext(WeatherContext);
     const [loading, setLoading] = useState(false);
     const [forecast, setForecast] = useState([]);
+    const [forecast2, setForecast2] = useState([]);
     const key = "29fc04065469346f226a149b0e081ded";
     const [city, setCity] = useState(contextCity || "İSTANBUL");
-
-//data cekme islemi
+      //data cekme islemi
 
     useEffect(() => {
         const fetchForecast = async () => {
-            setLoading(true);
+            setLoading(true)
             const response = await axios.get(
                 `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${key}&units=metric&lang=tr`
             );
-            setForecast(response.data.list.filter((data, index) => index % 8 === 0));
+            setForecast(response.data.list);
             setLoading(false);
         };
 
@@ -35,9 +36,12 @@ const WeatherForecast = () => {
 
         fetchForecast();
     }, [city, contextCity]);
+    useEffect(()=>{
+        setData()
+    },[forecast])
 
     useEffect(() => {
-        setCity(contextCity || "İSTANBUL");
+        setCity(contextCity || "İSTANBUL")
     }, [contextCity]);
 //hava durmu tipleri
     const renderWeatherIcon = (weatherCode) => {
@@ -75,13 +79,34 @@ const WeatherForecast = () => {
                 return null;
         }
     };
-
+// max ve min tempin duzgun alabbilmek icin fonskiyonda kontrol  ediyorum
+    const setData = ()=>{
+        let maxTemp=null
+        let minTemp=null
+        const arr=[]
+    forecast.map((data)=>{
+        if(maxTemp<data.main.temp_max || maxTemp===null){
+            maxTemp=data.main.temp_max
+        }
+        if(minTemp>data.main.temp_min || minTemp===null){
+            minTemp=data.main.temp_min
+        }
+        console.log(dayjs(data.dt*1000).format('HH'))
+        if(dayjs(data.dt*1000).format('HH')==='21'){
+            arr.push({...data,maxTemp,minTemp})
+            maxTemp=null
+            minTemp=null
+        }
+    })
+        console.log(arr)
+     setForecast2(arr)
+    }
     return (
         <div className="weather-forecast-container">
             {loading && <Puff color="#000" size={80} style={{marginLeft: "50%"}}/>}
             {!loading && forecast.length > 0 && (
                 <div className="weather-forecast">
-                    {forecast.map((data) => (
+                    {forecast2.map((data) => (
                         <div key={data.dt} className="weather-forecast-card">
                             <div className="weather-forecast-date">
                                 {new Date(data.dt * 1000).toLocaleDateString("tr-TR", {
@@ -95,7 +120,10 @@ const WeatherForecast = () => {
                                 {data.weather[0].description}
                             </div>
                             <div className="weather-forecast-temp">
-                                {Math.round(data.main.temp)}°C
+                                {Math.round(data.minTemp)}°C / {''}
+                                {Math.round(data.maxTemp)}°C
+
+
 
                             </div>
 
